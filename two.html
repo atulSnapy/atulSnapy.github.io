@@ -202,11 +202,7 @@ function createdAnswer(description) {
 
 
 function startCam() {
-    navigator.getUserMedia = navigator.getUserMedia ||
-                           navigator.webkitGetUserMedia ||
-                           navigator.mozGetUserMedia ||
-                           navigator.msGetUserMedia;
-  navigator.getUserMedia(mediaStreamConstraints)
+  navigator.mediaDevices.getUserMedia(mediaStreamConstraints)
     .then(gotCamMediaStream).catch((err)=>{
       handleSuccess('startCam', err);
     });
