@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>webRTC</title>
+</head>
+<body>
+	<h1>PC1</h1>
+	<div style="border: 1px solid black; text-align: center;">
+		<video id='camVideo' style="border: 1px solid black" autoplay="true"></video>
+		<video id='localVideo' style="border: 1px solid red" autoplay="true"></video>
+		<video id='remoteVideo' style="border: 1px solid blue" autoplay="true"></video>
+	</div>
+	<div style="border: 0px solid blue; text-align: center;">
+		<button id="createBtn" onclick="startCam()">Start Camera</button>
+		<button id="joinBtn" onclick="call()">Call</button>
+		<button id="callBtn" onclick="hangup()">Hang Up</button>
+	</div>
+
+	<div>
+		<textarea id="desc"></textarea>
+		<button id="descBtn" onclick="offans()">Offer/Answer</button>
+
+		<textarea id="ice"></textarea>
+		<button id="iceBtn" onclick="iceCan()">Candidate</button>
+	</div>
+</body>
+
+<style>
+	video {
+		width: 20%;
+	}
+	#camView {
+		width: 15%;;
+	}
+	red {
+		background-color: red;
+	}
+	blue {
+		background-color: blue;
+	}
+</style>
+<script src="pc1.js"></script>
+<!-- <script src="pc.js"></script> -->
+</html>

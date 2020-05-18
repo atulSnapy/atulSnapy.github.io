@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>webRTC</title>
+</head>
+<body>
+    <h1>PC2</h1>
+	<div style="border: 1px solid black; text-align: center;">
+		<video id='camVideo' style="border: 1px solid black" autoplay="true"></video>
+		<video id='localVideo' style="border: 1px solid red" autoplay="true"></video>
+		<video id='remoteVideo' style="border: 1px solid blue" autoplay="true"></video>
+	</div>
+	<div style="border: 0px solid blue; text-align: center;">
+		<button id="createBtn" onclick="startCam()">Start Camera</button>
+		<button id="joinBtn" onclick="call()">Call</button>
+		<button id="callBtn" onclick="hangup()">Hang Up</button>
+	</div>
+
+	<div>
+		<textarea id="desc"></textarea>
+		<button id="descBtn" onclick="offans()">Offer/Answer</button>
+
+		<textarea id="ice"></textarea>
+		<button id="iceBtn" onclick="iceCan()">Candidate</button>
+    </div>
+    
+    <div id="descText">
+
+    </div>
+    <br />
+    <br />
+    <div id="iceText">
+
+    </div>
+</body>
+
+<style>
+	video {
+		width: 30%;
+	}
+	#camView {
+		width: 15%;;
+	}
+	red {
+		background-color: red;
+	}
+	blue {
+		background-color: blue;
+	}
+</style>
+<!-- <script src="pc2.js"></script> -->
+<script>
+const mediaStreamConstraints = {
+    video: true,
+};
+const offerOptions = {
+  offerToReceiveVideo: 1,
+};
+
+const camVideo = document.getElementById('camVideo');
+const localVideo = document.getElementById('localVideo');
+const remoteVideo = document.getElementById('remoteVideo');
+
+let camStream;
+let localStream;
+let remoteStream;
+
+// let pc1;
+let pc2;
+
+
+function handleSuccess(what) {
+  console.log(what, ' success');
+}
+function handleError(what, error) {
+  console.log(what, ' err', error);
+}
+
+function gotCamMediaStream(mediaStream) {
+  camVideo.srcObject = mediaStream;
+  camStream = mediaStream;
+  console.log('Received cam stream.');
+  callButton.disabled = false;  // Enable call button.
+}
+
+function gotLocalMediaStream(event) {
+  const mediaStream = event.stream;
+  localVideo.srcObject = mediaStream;
+  localStream = mediaStream;
+  console.log('received local stream.');
+}
+
+function gotRemoteMediaStream(event) {
+  const mediaStream = event.stream;
+  remoteVideo.srcObject = mediaStream;
+  remoteStream = mediaStream;
+  console.log('received remote stream.');
+}
+
+// function handlepc1Connection(event) {
+//   // const peerConnection = event.target;
+//   const iceCandidate = event.candidate;
+
+//   if (iceCandidate) {
+
+//     sendConnpc2(iceCandidate);
+//   }
+// }
+
+function handlepc2Connection(event) {
+  // const peerConnection = event.target;
+  const iceCandidate = event.candidate;
+
+  if (iceCandidate) {
+
+    // sendConnpc1(iceCandidate);
+    console.log('ICE '+JSON.stringify(iceCandidate.toJSON()));
+    document.getElementById('iceText').innerText = JSON.stringify(iceCandidate.toJSON());
+  }
+}
+
+function sendConnpc2(iceCandidate) {
+  const newIceCandidate = new RTCIceCandidate(iceCandidate);
+
+    // send icecandidate to other(remote/local)
+    pc2.addIceCandidate(newIceCandidate)
+      .then(() => {
+        handleSuccess('ice pc1 -> pc2');
+      }).catch((error) => {
+        handleError('ice pc1 -> pc2', error);
+      });
+}
+
+// function sendConnpc1(iceCandidate) {
+//   const newIceCandidate = new RTCIceCandidate(iceCandidate);
+
+//     // send icecandidate to other(remote/local)
+//     pc1.addIceCandidate(newIceCandidate)
+//       .then(() => {
+//         handleSuccess('ice pc2 -> pc1');
+//       }).catch((error) => {
+//         handleError('ice pc2 -> pc1', error);
+//       });
+// }
+
+
+// function createdOffer(description) {
+
+//   console.log('pc1 setLocalDescription start.');
+//   pc1.setLocalDescription(description)
+//     .then(() => {
+//       handleSuccess('pc1 desc added');
+//     }).catch((error) => {
+//       handleError('pc1 desc added', error);
+//     });
+//     // send this desc(offer) to remote
+
+//     sendOfferpc2(description);
+// }
+
+function sendOfferpc2(description) {
+  console.log('pc2 setRemoteDescription start.');
+  pc2.addStream(camStream)
+  pc2.setRemoteDescription(description)
+    .then(() => {
+      handleSuccess('pc2 remote desc added');
+    }).catch((error) => {
+      handleError('pc2 reomte desc added', error);
+    });
+
+  pc2.createAnswer()
+    .then(createdAnswer)
+    .catch((error) => {
+      handleError('pc2 create ans', error);
+    });
+}
+
+function createdAnswer(description) {
+
+  console.log('pc2 setLocalDescription start.');
+  pc2.setLocalDescription(description)
+    .then(() => {
+      handleSuccess('pc2 local desc')
+    }).catch((error) =>{
+      handleError('pc2 local desc', error);
+    });
+
+    // sendAnswerpc1(description);
+    console.log('ANSWER '+JSON.stringify(description.toJSON()));
+    document.getElementById('descText').innerText = JSON.stringify(description.toJSON());
+}
+
+
+// function sendAnswerpc1(description) {
+//   pc1.setRemoteDescription(description)
+//     .then(() => {
+//       handleSuccess('pc1 remote desc');
+//     }).catch((err) => {
+//       handleError('pc1 remote desc', err);
+//     });
+// }
+
+
+function startCam() {
+    navigator.getUserMedia = navigator.getUserMedia ||
+                           navigator.webkitGetUserMedia ||
+                           navigator.mozGetUserMedia ||
+                           navigator.msGetUserMedia;
+  navigator.getUserMedia(mediaStreamConstraints)
+    .then(gotCamMediaStream).catch((err)=>{
+      handleSuccess('startCam', err);
+    });
+}
+
+function call() {
+  const servers = {"iceServers": [{ "url": "stun:stun.1.google.com:19302" }] };
+  
+//   pc1 = new RTCPeerConnection(servers);
+//   trace('Created local peer connection object pc1.');
+
+//   pc1.addEventListener('icecandidate', handlepc1Connection);
+  // pc1.addEventListener('iceconnectionstatechange', handleConnectionChange);
+  
+
+
+  pc2 = new RTCPeerConnection(servers);
+  trace('Created  pc2.');
+
+//   pc1.addEventListener('addstream', gotLocalMediaStream);
+
+  pc2.addEventListener('icecandidate', handlepc2Connection);
+  // pc2.addEventListener('iceconnectionstatechange', handleConnectionChange);
+  pc2.addEventListener('addstream', gotRemoteMediaStream);
+
+  // Add local stream to connection and create offer to connect.
+//   pc1.addStream(camStream);
+//   trace('Added cam stream to pc1.');
+
+//   trace('pc1 createOffer start.');
+//   pc1.createOffer(offerOptions)
+//     .then(createdOffer).catch((err) => {
+//       handleError('pc1 crtoffer', err);
+//     });
+}
+
+function hangup() {
+//   pc1.close();
+  pc2.close();
+//   pc1 = null;
+  pc2 = null;
+  clear();
+}
+
+function trace(x) {
+  console.log(x);
+}
+
+
+function offans() {
+    let desc = document.getElementById('desc').value.trim();
+    sendOfferpc2(new RTCSessionDescription(JSON.parse(desc)));
+}
+
+function iceCan() {
+    let ice = document.getElementById('ice').value.trim();
+    sendConnpc2(new RTCIceCandidate(JSON.parse(ice)));
+}
+
+</script>
+</html>
